@@ -14,6 +14,7 @@ function headerInfo = Norpix2files(inpath, outpath, format, range, makedir, show
 %              timestamps are not guaranteed to be synchronised.
 %              Indexed from 1, e.g.
 %              []         -- parse all frames
+%              [100]      -- just parse frame 100
 %              [100 Inf]  -- parse frames 100 to end
 %              [1 100]    -- parse frames start to 100 (== [0 100] == [-Inf 100])
 %              [101 200]  -- parse frames 101 to 200 (inclusive)
@@ -25,22 +26,39 @@ function headerInfo = Norpix2files(inpath, outpath, format, range, makedir, show
 %    OUTPUTS:
 %       HEADERINFO: Structure containing the information stored in the header
 %
+% EXAMPLES:
+%   h = Norpix2files('cam1.seq','./cam1/');
+%           Reads in the file cam1.seq in the local directory, and outputs png
+%           files to the existing directory /cam1/
+%   h = Norpix2files('/Users/andy/documents/work/data/cam1.seq','/Users/andy/documents/work/data/cam1/','bmp',[],true);
+%           Reads in the file cam1.seq at the path specified, and outputs bmp
+%           files to the output folder and creates it if it does not exist
+%   h = Norpix2files('cam1.seq',[]);
+%           Just parses the header from cam1.seq, including timestamps (slow)
+%   h = Norpix2files('cam1.seq',[],[],[Inf Inf]);
+%           Just parses the header from cam1.seq, without timestamps (fast)
+%   h = Norpix2files('cam1.seq',[],[],[100],[],true);
+%           Displays the image at index 100
+%
 % Written 2014/06/11 by Andrew Chinery
 
 % Input sanity check
 if nargin < 2
     error('Requires input and output arguments.');
 end
-if nargin < 3
+if nargin < 3 || isempty(format)
     format = 'png';
 end
 if nargin < 4
     range = [];
 end
-if nargin < 5
+if length(range) == 1
+    range = [range range];
+end
+if nargin < 5 || isempty(makedir)
     makedir = false;
 end
-if nargin < 6
+if nargin < 6 || isempty(showImg)
     showImg = false;
 end
 
@@ -74,6 +92,7 @@ end
 if(~any(strcmp(format,{'png','tiff','bmp','jpg'})))
    error('Valid options for format are  ''png'',''tiff'',''bmp'',''jpg''');
 end
+
 
 % Open file for reading
 fid = fopen(inpath,'r','b');
@@ -238,5 +257,5 @@ while 1
     end
 end
 save([outpath 'headerinfo.mat'],'headerInfo');
-fprintf('\n');
+fprintf('\nHeader info saved in %s',[outpath 'headerinfo.mat']);
 fclose(fid);
